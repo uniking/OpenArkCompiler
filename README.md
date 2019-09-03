@@ -2,6 +2,8 @@
 
 华为方舟编译器部分源码
 
+https://code.opensource.huaweicloud.com/HarmonyOS/OpenArkCompiler/home
+
 pacman -S ninja
 
 pacman -S gn
