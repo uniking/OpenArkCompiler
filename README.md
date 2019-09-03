@@ -6,4 +6,4 @@ pacman -S ninja
 
 pacman -S gn
 
-
+编译好的二进制已上传到release
