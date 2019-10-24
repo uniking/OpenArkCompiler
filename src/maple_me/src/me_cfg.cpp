@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "me_cfg.h"
 #include <iostream>
@@ -244,17 +244,39 @@ bool MirCFG::FindUse(StmtNode *stmt, StIdx stID) {
   return false;
 }
 
-// Return true if there is no use of sym betweent from to to.
-bool MirCFG::HasNoUseBetween(StmtNode *from, StmtNode *to, StIdx stIdx) {
+bool MirCFG::FindDef(StmtNode *stmt, StIdx stid) {
+  if (stmt->GetOpCode() != OP_dassign && !kOpcodeInfo.IsCallAssigned(stmt->GetOpCode())) {
+    return false;
+  }
+  if (stmt->GetOpCode() == OP_dassign) {
+    DassignNode *dassStmt = static_cast<DassignNode *>(stmt);
+    return dassStmt->GetStIdx() == stid;
+  } else {
+    CallNode *cnode = static_cast<CallNode *>(stmt);
+    CallReturnVector &nrets = cnode->GetReturnVec();
+    if (nrets.size() != 0) {
+      ASSERT(nrets.size() == 1, "Single Ret value for now.");
+      StIdx stidx = nrets[0].first;
+      RegFieldPair regfieldpair = nrets[0].second;
+      if (!regfieldpair.IsReg()) {
+        return stidx == stid;
+      }
+    }
+  }
+  return false;
+}
+
+// Return true if there is no use or def of sym betweent from to to.
+bool MirCFG::HasNoOccBetween(StmtNode *from, StmtNode *to, StIdx stIdx) {
   for (StmtNode *stmt = from; stmt && stmt != to; stmt = stmt->GetNext()) {
-    if (FindUse(stmt, stIdx)) {
+    if (FindUse(stmt, stIdx) || FindDef(stmt, stIdx)) {
       return false;
     }
   }
   return true;
 }
 
-// Fix the initially created CFG removing outgoing exception edge from normal return bb
+// Fix the initially created CFG
 void MirCFG::FixMirCFG() {
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
@@ -264,6 +286,70 @@ void MirCFG::FixMirCFG() {
     auto *bb = *bIt;
     // Split bb in try if there are use -- def the same ref var.
     if (bb->GetAttributes(kBBAttrIsTry)) {
+      // 1. Split callassigned/dassign stmt to two insns if it redefine a symbole and also use
+      //    the same symbol as its operand.
+      for (StmtNode *stmt = to_ptr(bb->GetStmtNodes().begin()); stmt != nullptr; stmt = stmt->GetNext()) {
+        MIRSymbol *sym = nullptr;
+        if (kOpcodeInfo.IsCallAssigned(stmt->GetOpCode())) {
+          CallNode *cnode = static_cast<CallNode *>(stmt);
+          CallReturnVector &nrets = cnode->GetReturnVec();
+          if (nrets.size() != 0) {
+            ASSERT(nrets.size() == 1, "Single Ret value for now.");
+            StIdx stidx = nrets[0].first;
+            RegFieldPair regfieldpair = nrets[0].second;
+            if (!regfieldpair.IsReg()) {
+              sym = func->GetMirFunc()->GetLocalOrGlobalSymbol(stidx);
+            }
+          }
+        } else if (stmt->GetOpCode() == OP_dassign) {
+          DassignNode *dassStmt = static_cast<DassignNode*>(stmt);
+          // exclude the case a = b;
+          if (dassStmt->GetRHS()->GetOpCode() == OP_dread) {
+            continue;
+          }
+          sym = func->GetMirFunc()->GetLocalOrGlobalSymbol(dassStmt->GetStIdx());
+        }
+        if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
+           continue;
+        }
+        if (FindUse(stmt, sym->GetStIdx())) {
+          func->GetMirFunc()->IncTempCount();
+          std::string tempStr = std::string("tempRet").append(std::to_string(func->GetMirFunc()->GetTempCount()));
+          MIRBuilder *builder = func->GetMirFunc()->GetModule()->GetMIRBuilder();
+          MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr.c_str(), sym->GetType());
+          targetSt->ResetIsDeleted();
+          if (stmt->GetOpCode() == OP_dassign) {
+            BaseNode *rhs = static_cast<DassignNode*>(stmt)->GetRHS();
+            StmtNode *dassign = builder->CreateStmtDassign(targetSt, 0, rhs);
+            bb->ReplaceStmt(stmt, dassign);
+            stmt = dassign;
+          } else {
+            CallNode *cnode = static_cast<CallNode *>(stmt);
+            CallReturnPair retPair = cnode->GetReturnPair(0);
+            retPair.first = targetSt->GetStIdx();
+            cnode->SetReturnPair(retPair, 0);
+          }
+          StmtNode *dassign = builder->CreateStmtDassign(sym, 0, builder->CreateExprDread(targetSt));
+          if (stmt->GetNext() != nullptr) {
+            bb->InsertStmtBefore(stmt->GetNext(), dassign);
+          } else {
+            ASSERT( stmt == &(bb->GetStmtNodes().back()), "just check");
+            stmt->SetNext(dassign);
+            dassign->SetPrev(stmt);
+            bb->GetStmtNodes().update_back(dassign);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Split bb to two bbs if there are use and def the same ref var in bb.
+  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+    if (bIt == func->common_entry() || bIt == func->common_exit()) {
+      continue;
+    }
+    auto *bb = *bIt;
+    if (bb && bb->GetAttributes(kBBAttrIsTry)) {
       for (auto &splitPoint : bb->GetStmtNodes()) {
         StmtNode *nextStmt = splitPoint.GetNext();
         if (nextStmt != nullptr &&
@@ -288,7 +374,7 @@ void MirCFG::FixMirCFG() {
           if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
             continue;
           }
-          if (HasNoUseBetween(bb->GetStmtNodes().begin().d(), nextStmt, sym->GetStIdx())) {
+          if (HasNoOccBetween(bb->GetStmtNodes().begin().d(), nextStmt, sym->GetStIdx())) {
             continue;
           }
           BB *newBB = func->SplitBB(bb, &splitPoint);
@@ -307,6 +393,7 @@ void MirCFG::FixMirCFG() {
         }
       }
     }
+    // removing outgoing exception edge from normal return bb
     if (bb->GetKind() != kBBReturn || !bb->GetAttributes(kBBAttrIsTry) || bb->IsEmpty()) {
       continue;
     }
@@ -518,7 +605,7 @@ void MirCFG::WontExitAnalysis() {
     if (!visitedBBs[idx]) {
       bb->SetAttributes(kBBAttrWontExit);
       if (!MeOptions::quiet) {
-        printf("#### BB %d wont exit\n", idx);
+        LogInfo::MapleLogger() << "#### BB " << idx << " wont exit\n";
       }
       if (bb->GetKind() == kBBGoto) {
         // create artificial BB to transition to common_exit_bb
@@ -611,7 +698,7 @@ void MirCFG::Dump() {
   // BSF  Dump the cfg
   // map<uint32, uint32> visited_map;
   // set<uint32> visited_set;
-  printf("####### CFG Dump: ");
+  LogInfo::MapleLogger() << "####### CFG Dump: ";
   ASSERT(func->NumBBs() != 0, "size to be allocated is 0");
   bool *visitedMap = static_cast<bool*>(calloc(func->NumBBs(), sizeof(bool)));
   if (visitedMap != nullptr) {
@@ -627,7 +714,7 @@ void MirCFG::Dump() {
       if (visitedMap[id.idx] == true) {
         continue;
       }
-      printf("%zu ", id.idx);
+      LogInfo::MapleLogger() << id.idx << " ";
       visitedMap[id.idx] = true;
       auto it = bb->GetSucc().begin();
       while (it != bb->GetSucc().end()) {
@@ -638,7 +725,7 @@ void MirCFG::Dump() {
         it++;
       }
     }
-    printf("\n");
+    LogInfo::MapleLogger() << "\n";
     free(visitedMap);
   }
 }

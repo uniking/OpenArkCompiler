@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "class_hierarchy.h"
 #include <iostream>
@@ -49,11 +49,13 @@ Klass::Klass(MIRStructType *type, MapleAllocator *alc)
       implKlasses(alloc->Adapter()),
       implInterfaces(alloc->Adapter()),
       methods(alloc->Adapter()),
+      strIdx2Method(std::less<GStrIdx>(), alloc->Adapter()),
       clinitMethod(nullptr),
       classInitBridge(nullptr),
       strIdx2CandidateMap(std::less<GStrIdx>(), alloc->Adapter()),
       flags(0),
       isPrivateInnerAndNoSubClassFlag(false),
+      hasNativeMethods(false),
       needDecoupling(true) {
   ASSERT((type != nullptr) && (type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface),
          "runtime check error");
@@ -136,6 +138,9 @@ MIRFunction *Klass::GetClosestMethod(GStrIdx funcnamewithtype) const {
 }
 
 void Klass::DelMethod(const MIRFunction *func) {
+  if (GetMethod(func->GetBaseFuncNameWithTypeStrIdx()) == func) {
+    strIdx2Method.erase(func->GetBaseFuncNameWithTypeStrIdx());
+  }
   for (auto it = methods.begin(); it != methods.end(); it++) {
     if (*it == func) {
       methods.erase(it--);
@@ -296,7 +301,7 @@ void Klass::CountVirtMethBottomUp() {
 }
 
 const MIRFunction *Klass::HasMethod(const char *funcname) {
-  for (auto method : methods) {
+  for (auto *method : methods) {
     if (method->GetBaseFuncNameWithType().find(funcname) != std::string::npos) {
       return method;
     }
@@ -440,15 +445,6 @@ const std::string &KlassHierarchy::GetLCA(const std::string &name1, const std::s
 
 void KlassHierarchy::AddKlasses() {
   for (MIRType *type : GlobalTables::GetTypeTable().GetTypeTable()) {
-#if DEBUG
-    if (type != nullptr) {
-      MIRTypeKind kd = type->GetKind();
-      if (kd == kTypeStructIncomplete || kd == kTypeClassIncomplete || kd == kTypeInterfaceIncomplete)
-        LogInfo::MapleLogger() << "Warning: KlassHierarchy::AddKlasses "
-                               << GlobalTables::GetStrTable().GetStringFromStrIdx(type->GetNameStrIdx())
-                               << " INCOMPLETE " << std::endl;
-    }
-#endif
     if (type == nullptr || (type->GetKind() != kTypeClass && type->GetKind() != kTypeInterface)) {
       continue;
     }
@@ -702,7 +698,7 @@ void KlassHierarchy::MarkClassFlags() {
     // Mark native function info
     for (auto &method : klass->GetMethods()) {
       if (method->GetAttr(FUNCATTR_native)) {
-        klass->SetHasNativeMethod();
+        klass->SetHasNativeMethod(true);
         break;
       }
     }
@@ -833,7 +829,7 @@ bool WKTypes::Util::MayRefMeta(const BaseNode *n, MIRType *type) {
        public interface AnnotatedElement {...}
      */
     if (pointedType == javalangrefMethod || pointedType == javalangrefExecutable ||
-        pointedType == javalangrefAccessibleObject || pointedType == javalangrefAnnotatedElement ||
+        pointedType == javalangrefAccessibleObject ||
         pointedType == javalangrefMember || pointedType == javalangrefGenericDeclaration ||
         pointedType == javalangrefAnnotatedElement || pointedType == javalangObject) {
       return true;

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_BIN_MPL_IMPORT_H
 #define MAPLE_IR_INCLUDE_BIN_MPL_IMPORT_H
@@ -74,7 +74,7 @@ class BinaryMplImport {
   void ReadTypeField();
   void Jump2NextField();
   void Reset();
-  MIRSymbol *GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mclass, MIRStorageClass sclass,
+  MIRSymbol *GetOrCreateSymbol(const TyIdx &tyIdx, const GStrIdx &strIdx, MIRSymKind mclass, MIRStorageClass sclass,
                                MIRFunction *func, uint8 scpID);
   MIRType *InsertInTypeTables(MIRType *ptype);
   void InsertInHashTable(MIRType *ptype);
@@ -97,7 +97,6 @@ class BinaryMplImport {
   MIRPragma *ImportPragma();
   void ImportFieldPair(FieldPair &fp);
   void ImportMethodPair(MethodPair &memPool);
-  void ImportFieldsOfStructType(FieldVector &fields);
   void ImportMethodsOfStructType(MethodVector &methods);
   void ImportStructTypeData(MIRStructType *type);
   void ImportInterfacesOfClassType(std::vector<TyIdx> &interfaces);
@@ -139,7 +138,8 @@ class BinaryMplImport {
   std::string importFileName;
 
   void SkipTotalSize();
+  void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
 };
 
 }  // namespace maple
-#endif
+#endif  // MAPLE_IR_INCLUDE_BIN_MPL_IMPORT_H

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_PHASE_INCLUDE_PHASE_H
 #define MAPLE_PHASE_INCLUDE_PHASE_H
@@ -182,11 +182,10 @@ class AnalysisResultManager {
 
  private:
   MapleAllocator *allocator; /* allocator used in local field */
-  /* map < pair<phaseId, ir*>, AnalysisResult_T> */
   using analysisResultKey = std::pair<PhaseIDT, UnitIR*>;
   MapleMap<analysisResultKey, AnalysisResult*> analysisResults;
   MapleMap<PhaseIDT, PhaseT*> analysisPhases;
 };
 
 }  // namespace maple
-#endif  // MAPLEPHSE_IMCLUDE_PHASE_H
+#endif  // MAPLE_PHASE_INCLUDE_PHASE_H

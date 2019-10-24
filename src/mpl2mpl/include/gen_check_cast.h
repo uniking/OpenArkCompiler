@@ -1,18 +1,17 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
-
 #ifndef MPL2MPL_INCLUDE_GEN_CHECK_CAST_H
 #define MPL2MPL_INCLUDE_GEN_CHECK_CAST_H
 #include "class_hierarchy.h"
@@ -23,6 +22,8 @@ namespace maple {
 static constexpr char kMCCReflectThrowCastException[] = "MCC_Reflect_ThrowCastException";
 static constexpr char kMCCReflectCheckCastingNoArray[] = "MCC_Reflect_Check_Casting_NoArray";
 static constexpr char kMCCReflectCheckCastingArray[] = "MCC_Reflect_Check_Casting_Array";
+
+
 class CheckCastGenerator : public FuncOptimizeImpl {
  public:
   CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool dump);
@@ -43,8 +44,7 @@ class CheckCastGenerator : public FuncOptimizeImpl {
   void InitTypes();
   void InitFuncs();
   void GenAllCheckCast();
-  void GenCheckCast(BaseNode *stmt, BaseNode *latestInstanceOfStmt, StIdx lastOpndStidx);
-  bool FindDef(BaseNode *x, MIRSymbol *symbol);
+  void GenCheckCast(BaseNode *stmt);
   BaseNode *GetObjectShadow(BaseNode *opnd);
   MIRSymbol *GetOrCreateClassInfoSymbol(const std::string &className);
   bool FindUseExpr(BaseNode *node, StIdx idx);
@@ -67,5 +67,6 @@ class DoCheckCastGeneration : public ModulePhase {
   }
 };
 
+
 }  // namespace maple
-#endif
+#endif  // MPL2MPL_INCLUDE_GEN_CHECK_CAST_H

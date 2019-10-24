@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "alias_class.h"
 #include "mpl_logging.h"
@@ -94,7 +94,7 @@ AliasElem *AliasClass::FindOrCreateAliasElem(OriginalSt *ost) {
 
 AliasElem *AliasClass::FindOrCreateExtraLevAliasElem(BaseNode *expr, TyIdx tyIdx, FieldID fieldId) {
   ASSERT(expr != nullptr, "nullptr check");
-  AliasElem *ae = CreateAliasElemsExpr((expr->GetOpCode() == OP_cvt) ? expr->Opnd(0) : expr);
+  AliasElem *ae = CreateAliasElemsExpr(kOpcodeInfo.IsTypeCvt(expr->GetOpCode()) ? expr->Opnd(0) : expr);
   if (ae == nullptr) {
     return nullptr;
   }
@@ -229,7 +229,7 @@ void AliasClass::ApplyUnionForCopies(StmtNode *stmt) {
     case OP_call:
     case OP_callassigned: {
       CallNode *call = static_cast<CallNode*>(stmt);
-      CHECK(call->GetPUIdx() < GlobalTables::GetFunctionTable().GetFuncTable().size(),
+      ASSERT(call->GetPUIdx() < GlobalTables::GetFunctionTable().GetFuncTable().size(),
             "index out of range in AliasClass::ApplyUnionForCopies");
       SetPtrOpndsNextLevNADS(0, call->NumOpnds(), call->GetNopnd(), false);
       break;
@@ -263,6 +263,7 @@ void AliasClass::ApplyUnionForCopies(StmtNode *stmt) {
         SetPtrOpndsNextLevNADS(0, innode->NumOpnds(), innode->GetNopnd(), false);
         break;
       }
+      //  fallthrough;
     }
     default:
       for (size_t i = 0; i < stmt->NumOpnds(); i++) {
@@ -361,7 +362,7 @@ void AliasClass::ApplyUnionForPointedTos() {
 void AliasClass::CollectRootIDOfNextLevelNodes(const OriginalSt *ost, std::set<uint> &rootIDOfNADSs) {
   for (OriginalSt *nextLevelNode : *(GetAliasAnalysisTable()->GetNextLevelNodes(ost))) {
     if (finalFieldAlias || !nextLevelNode->IsFinal()) {
-      uint32 id = (FindAliasElem(nextLevelNode)->GetClassID());
+      uint32 id = FindAliasElem(nextLevelNode)->GetClassID();
       rootIDOfNADSs.insert(unionFind.Root(id));
     }
   }
@@ -785,13 +786,10 @@ void AliasClass::CollectMayDefForIassign(StmtNode *stmt, std::set<OriginalSt*> &
     mayDefOsts.insert(lhsAe->GetOriginalSt());
     return;
   }
-  MIRPtrType *ptrType = dynamic_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(iass->GetTyIdx()));
-  TyIdx pointedTyIdx = (ptrType) ? ptrType->GetPointedTyIdxWithFieldID(iass->GetFieldID()) : TyIdx(0);
   for (uint elemID : *(lhsAe->GetClassSet())) {
     AliasElem *aliasElem = id2Elem[elemID];
     OriginalSt *ostOfAliasAE = aliasElem->GetOriginalSt();
-    if (aliasElem != lhsAe &&
-        (OriginalStIsZeroLevAndAuto(ostOfAliasAE) || (ostOfAliasAE->GetTyIdx() != pointedTyIdx && pointedTyIdx != 0))) {
+    if (aliasElem != lhsAe && OriginalStIsZeroLevAndAuto(ostOfAliasAE)) {
       continue;
     }
     mayDefOsts.insert(ostOfAliasAE);
@@ -891,12 +889,12 @@ void AliasClass::CollectMayUseForCallOpnd(const StmtNode *stmt, std::set<Origina
   for (size_t i = 0; i < stmt->NumOpnds(); i++) {
     BaseNode *expr = stmt->Opnd(i);
     InsertMayUseExpr(expr);
-    AliasElem *ae = CreateAliasElemsExpr(expr);
 
     if (!IsPotentialAddress(expr->GetPrimType())) {
       continue;
     }
 
+    AliasElem *ae = CreateAliasElemsExpr(expr);
     if (ae == nullptr || ae->IsNextLevNotAllDefsSeen()) {
       continue;
     }

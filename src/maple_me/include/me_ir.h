@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_ME_INCLUDE_ME_IR_H
 #define MAPLE_ME_INCLUDE_ME_IR_H
@@ -302,7 +302,6 @@ class VarMeExpr : public MeExpr {
   }
 
  private:
-  /* bool recursivePtr: 1;    // if pointer to recursive data structures */
   union {
     MeStmt *defStmt;  // definition stmt of this var
     MeVarPhiNode *defPhi;
@@ -1128,6 +1127,10 @@ class MeStmt {
   }
 
   const virtual MeExpr *GetAssignedLHS() const {
+    return nullptr;
+  }
+
+  virtual MeExpr *GetAssignedLHS() {
     return nullptr;
   }
 
@@ -1959,6 +1962,10 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
   }
 
+  MeExpr *GetAssignedLHS() {
+    return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
+  }
+
   MeExpr *GetLHSRef(SSATab *ssatab, bool excludelocalrefvar) {
     return GetAssignedPartLHSRef(ssatab, excludelocalrefvar);
   }
@@ -2141,6 +2148,10 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
   }
 
   const MeExpr *GetAssignedLHS() const {
+    return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
+  }
+
+  MeExpr *GetAssignedLHS() {
     return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
   }
 
@@ -2568,4 +2579,4 @@ class DumpOptions {
 };
 
 }  // namespace maple
-#endif
+#endif  // MAPLE_ME_INCLUDE_ME_IR_H

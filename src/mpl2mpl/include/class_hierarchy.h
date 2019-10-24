@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MPL2MPL_INCLUDE_CLASS_HIERARCHY_H
 #define MPL2MPL_INCLUDE_CLASS_HIERARCHY_H
@@ -32,7 +32,8 @@ static constexpr uint32 kClassFinalizerreferenceSentinel = 0x0100;
 static constexpr uint32 kClassIsExceptionKlass = 0x0200;
 static constexpr uint32 kClassIsanonymousclass = 0x0400;
 static constexpr uint32 kClassIscoldclass = 0x0800;
-static constexpr uint32 kClassHasNativeMethod = 0x1000;
+static constexpr uint32 kClassNeedDecouple = 0x1000;
+static constexpr uint32 kClassLazyBindingClass = 0x2000;
 static constexpr char kJavaLangNoMethodStr[] = "Ljava_2Flang_2FNoSuchMethodException_3B";
 
 #define CLASS_REFERENCE \
@@ -61,6 +62,8 @@ class Klass {
   MapleSet<Klass*, KlassComparator> implInterfaces;
   // A collection of class member methods
   MapleList<MIRFunction*> methods;
+  // A mapping to track every method to its baseFuncNameWithType
+  MapleMap<GStrIdx, MIRFunction*> strIdx2Method;
   MIRFunction *clinitMethod;
   MIRSymbol *classInitBridge;
   // A mapping to track possible implementations for each virtual function
@@ -69,6 +72,7 @@ class Klass {
   // Now contains whether this class is exception, reference or has finalizer.
   uint32 flags;
   bool isPrivateInnerAndNoSubClassFlag;
+  bool hasNativeMethods;
   bool needDecoupling;
   void DumpKlassImplInterfaces() const;
   void DumpKlassImplKlasses() const;
@@ -99,6 +103,10 @@ class Klass {
     return methods;
   }
 
+  const MIRFunction *GetMethod(GStrIdx idx) const {
+    MapleMap<GStrIdx, MIRFunction*>::const_iterator it = strIdx2Method.find(idx);
+    return it != strIdx2Method.end() ? it->second : nullptr;
+  }
   GStrIdx GetKlassNameStrIdx() const {
     return structType->GetNameStrIdx();
   }
@@ -160,16 +168,16 @@ class Klass {
     return HasFlag(kClassHasFinalizer);
   }
 
-  bool HasNativeMethod() const {
-    return HasFlag(kClassHasNativeMethod);
-  }
-
-  void SetHasNativeMethod() {
-    SetFlag(kClassHasNativeMethod);
-  }
-
   void SetHasFinalizer() {
     SetFlag(kClassHasFinalizer);
+  }
+
+  bool HasNativeMethod() const {
+    return hasNativeMethods;
+  }
+
+  void SetHasNativeMethod(bool flag) {
+    hasNativeMethods = flag;
   }
 
   bool IsReference(uint32 flag) const {
@@ -260,6 +268,7 @@ class Klass {
 
   void AddMethod(MIRFunction *func) {
     methods.push_front(func);
+    strIdx2Method.insert({ func->GetBaseFuncNameWithTypeStrIdx(), func });
   }
 
   void DelMethod(const MIRFunction *func);
@@ -375,4 +384,4 @@ class KlassHierarchy : public AnalysisResult {
 };
 
 }  // namespace maple
-#endif  // MPL2MPL_INCLUDE_CLASSHIERARCHY_H
+#endif  // MPL2MPL_INCLUDE_CLASS_HIERARCHY_H

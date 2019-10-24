@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_MIR_PRAGMA_H
 #define MAPLE_IR_INCLUDE_MIR_PRAGMA_H
@@ -181,6 +181,7 @@ class MIRPragma {
         visibility(0),
         strIdx(0),
         tyIdx(0),
+        tyIdxEx(0),
         paramNum(-1),
         elementVec(m->GetMPAllocator().Adapter()) {}
 
@@ -209,6 +210,10 @@ class MIRPragma {
 
   const TyIdx GetTyIdx() const {
     return tyIdx;
+  }
+
+  const TyIdx GetTyIdxEx() const {
+    return tyIdxEx;
   }
 
   int32 GetParamNum() const {
@@ -243,6 +248,10 @@ class MIRPragma {
     tyIdx = idx;
   }
 
+  void SetTyIdxEx(TyIdx idx) {
+    tyIdxEx = idx;
+  }
+
   void SetParamNum(int32 paramnum) {
     paramNum = paramnum;
   }
@@ -253,9 +262,10 @@ class MIRPragma {
   uint8 visibility;
   GStrIdx strIdx;
   TyIdx tyIdx;
+  TyIdx tyIdxEx;
   int32 paramNum;  // paramNum th param in function, -1 not for param annotation
   MapleVector<MIRPragmaElement*> elementVec;
 };
 
 }  // namespace maple
-#endif  // INCLUDE_MIRPRAGMA_H_
+#endif  // MAPLE_IR_INCLUDE_MIR_PRAGMA_H

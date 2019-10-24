@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "vtable_analysis.h"
 #include "reflection_analysis.h"
@@ -373,12 +373,18 @@ void VtableAnalysis::ReplaceSuperclassInvoke(CallNode *stmt) {
   MapleVector<MIRFunction*> *cands = klass->GetCandidates(callee->GetBaseFuncNameWithTypeStrIdx());
   // continue to search its implinterfaces
   if (cands == nullptr) {
-    CHECK_FATAL(false, "Candidates not found for function %s", callee->GetName().c_str());
     for (Klass *implInterface : klass->GetImplInterfaces()) {
       cands = implInterface->GetCandidates(callee->GetBaseFuncNameWithTypeStrIdx());
       if (cands != nullptr && !cands->empty()) {
         break;
       }
+    }
+  }
+  if (!cands || cands->size() == 0) {
+    if (klass->IsClass() || klass->IsInterface()) {
+      LogInfo::MapleLogger() << "warning: func " << callee->GetName() << " is not found in SuperInvoke!" << std::endl;
+      stmt->SetOpCode(OP_callassigned);
+      return;
     }
   }
   CHECK_FATAL(cands != nullptr && !cands->empty(),
@@ -388,6 +394,7 @@ void VtableAnalysis::ReplaceSuperclassInvoke(CallNode *stmt) {
   CHECK_FATAL(actualMIRFunc, "Can not find the implementation of %s", callee->GetName().c_str());
   stmt->SetOpCode(OP_callassigned);
   stmt->SetPUIdx(actualMIRFunc->GetPuidx());
+  GetModule()->addSuperCall(actualMIRFunc->GetName());
 }
 
 void VtableAnalysis::ReplacePolymorphicInvoke(CallNode *stmt) {
@@ -452,6 +459,7 @@ void VtableAnalysis::ReplaceVirtualInvoke(CallNode *stmt) {
   stmt->GetNopnd().insert(stmt->GetNopnd().begin(), readFuncPtr);
   stmt->SetNumOpnds(stmt->GetNumOpnds() + 1);
 }
+
 
 void VtableAnalysis::ReplaceInterfaceInvoke(CallNode *stmt) {
   CHECK_FATAL(stmt->GetNopnd().empty() == false, "container check");

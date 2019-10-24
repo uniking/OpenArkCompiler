@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MPL2MPL_INCLUDE_NATIVE_STUB_FUNC_H
 #define MPL2MPL_INCLUDE_NATIVE_STUB_FUNC_H
@@ -92,7 +92,8 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
   };
   MIRFunction *GetOrCreateDefaultNativeFunc(MIRFunction *stubFunc);
   void GenericRegisteredNativeFuncCall(MIRFunction *func, const MIRFunction *nativeFunc, MapleVector<BaseNode*> &args,
-                                       const MIRSymbol *ret);
+                                       const MIRSymbol *ret, bool needNativeCall, CallNode *prevNativeFuncCall,
+                                       CallNode *postNativeFuncCall);
   StmtNode *CreateNativeWrapperCallNode(MIRFunction *func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
                                         const MIRSymbol *ret);
   void GenericNativeWrapperFuncCall(MIRFunction *func, const MIRFunction *nativeFunc, MapleVector<BaseNode*> &args,
@@ -123,4 +124,4 @@ class DoGenericNativeStubFunc : public ModulePhase {
 };
 
 }  // namespace maple
-#endif
+#endif  // MPL2MPL_INCLUDE_NATIVE_STUB_FUNC_H

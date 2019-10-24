@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_GLOBAL_TABLES_H
 #define MAPLE_IR_INCLUDE_GLOBAL_TABLES_H
@@ -81,6 +81,8 @@ class TypeTable {
 
  public:
   TypeTable();
+  TypeTable(const TypeTable&) = delete;
+  TypeTable &operator=(const TypeTable&) = delete;
   ~TypeTable();
   MIRType *CreateMirType(uint32 ti) const;
   void PutToHashTable(MIRType *mirtype);
@@ -94,6 +96,11 @@ class TypeTable {
     return typeTable.at(tyIdx.GetIdx());
   }
 
+  MIRType *GetTypeFromTyIdx(uint32 index) const {
+    ASSERT(index < typeTable.size(), "array index out of range");
+    return typeTable.at(index);
+  }
+
   PrimType GetPrimTypeFromTyIdx(TyIdx tyIdx) const {
     ASSERT(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
     return typeTable.at(tyIdx.GetIdx())->GetPrimType();
@@ -105,6 +112,11 @@ class TypeTable {
   }
 
   TyIdx GetOrCreateMIRType(MIRType *ptype);
+
+  uint32 GetTypeTableSize(void) const {
+    return typeTable.size();
+  }
+
   // Get primtive types.
   MIRType *GetPrimType(PrimType ptyp) const {
     ASSERT(ptyp < typeTable.size(), "array index out of range");
@@ -458,6 +470,8 @@ class MIRSymbol;
 class GSymbolTable {
  public:
   GSymbolTable();
+  GSymbolTable(const GSymbolTable&) = delete;
+  GSymbolTable &operator=(const GSymbolTable&) = delete;
   ~GSymbolTable();
 
   MIRModule *GetModule() {
@@ -615,4 +629,4 @@ class GlobalTables {
 };
 
 }  // namespace maple
-#endif  // GLOBALTABLES_H
+#endif  // MAPLE_IR_INCLUDE_GLOBAL_TABLES_H

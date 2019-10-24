@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_MIR_CONST_H
 #define MAPLE_IR_INCLUDE_MIR_CONST_H
@@ -45,7 +45,7 @@ class MIRConst {
 
   virtual void Dump() const;
 
-  uint32 GetFiledId() const {
+  uint32 GetFieldId() const {
     return fieldID;
   }
 
@@ -264,7 +264,7 @@ class MIRStrConst : public MIRConst {
     return value;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -284,7 +284,7 @@ class MIRStr16Const : public MIRConst {
 
   ~MIRStr16Const() {}
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -317,7 +317,7 @@ class MIRFloatConst : public MIRConst {
     return value.floatValue;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -382,7 +382,7 @@ class MIRDoubleConst : public MIRConst {
     return value.dValue;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -425,7 +425,7 @@ class MIRFloat128Const : public MIRConst {
     return value;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -470,7 +470,7 @@ class MIRAggConst : public MIRConst {
       if (constVec[i] == nullptr) {
         CHECK_FATAL(false, "exist nullptr in constVec");
       }
-      if (fieldidx == constVec[i]->GetFiledId()) {
+      if (fieldidx == constVec[i]->GetFieldId()) {
         return constVec[i];
       }
     }
@@ -538,4 +538,4 @@ class MIRStConst : public MIRConst {
 
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple
-#endif
+#endif  // MAPLE_IR_INCLUDE_MIR_CONST_H

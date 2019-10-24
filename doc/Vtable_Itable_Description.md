@@ -30,9 +30,9 @@ class C extends A {
 }
 
 public class IsEmpty {
-  public Static void main(String [] args) {
+  public static void main(String [] args) {
     A x = new B();
-    X.first();
+    x.first();
     A y = new C()
     y.first();
   }
@@ -41,7 +41,7 @@ public class IsEmpty {
     x.first();
   }
 }
-  ```
+```
 
 
 
@@ -103,10 +103,10 @@ __vtb_LC_3B:
 
 ```java
 public class IsEmpty {
-  public Static void main(String [] args) {
+  public static void main(String [] args) {
     A x = new B();
-    X.first();
-    A y = new C()
+    x.first();
+    A y = new C();
     y.first();
   }
 

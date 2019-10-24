@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_ME_INCLUDE_ME_FUNCTION_H
 #define MAPLE_ME_INCLUDE_ME_FUNCTION_H
@@ -138,14 +138,21 @@ bool FilterNullPtr(Iterator it, Iterator endIt) {
   return it == endIt || *it != nullptr;
 }
 
+enum MeFuncHint {
+    kReserved      = 0x00,       // reserved
+    kPlacementRCed = 0x01,       // method processed by placementrc
+    kAnalyzeRCed   = 0x02,       // method processed by analyzerc
+    kRcLowered     = 0x04,       // method lowered by rclowering
+};
+
 // to suppress warning
 // lint -sem(maple::MeFunction::PartialInit,initializer)
 class MeFunction : public FuncEmit {
   using BBPtrHolder = MapleVector<BB*>;
 
  public:
-  explicit MeFunction(MIRModule *mod, MIRFunction *func, MemPool *memPool, MemPool *versMemPool,
-                      const std::string &fileName)
+  MeFunction(MIRModule *mod, MIRFunction *func, MemPool *memPool, MemPool *versMemPool,
+             const std::string &fileName)
       : memPool(memPool),
         alloc(memPool),
         versMemPool(versMemPool),
@@ -155,10 +162,16 @@ class MeFunction : public FuncEmit {
         nextBBId(0),
         labelBBIdMap(alloc.Adapter()),
         bbVec(alloc.Adapter()),
+        theCFG(nullptr),
         meSSATab(nullptr),
+        irmap(nullptr),
         bbTryNodeMap(alloc.Adapter()),
         endTryBB2TryBB(alloc.Adapter()),
-        fileName(fileName) {}
+        fileName(fileName),
+        regNum(0),
+        hints(0),
+        hasEH(false),
+        secondPass(false) {}
 
   virtual ~MeFunction() {}
 
@@ -413,6 +426,14 @@ class MeFunction : public FuncEmit {
     regNum = num;
   }
 
+  uint32 GetHints() const {
+    return hints;
+  }
+
+  void SetHints(uint32 num) {
+    hints = num;
+  }
+
   void PartialInit(bool isSecondPass);
 
  private:
@@ -438,9 +459,10 @@ class MeFunction : public FuncEmit {
   /* input */
   std::string fileName;
   uint32 regNum;    // count virtual registers
+  uint32 hints;
   bool hasEH;       /* current has try statement */
   bool secondPass;  // second pass for the same function
 };
 
 }  // namespace maple
-#endif  // MAPLEME_INCLUDE_MEFUNCTION_H
+#endif  // MAPLE_ME_INCLUDE_ME_FUNCTION_H

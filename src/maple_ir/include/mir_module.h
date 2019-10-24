@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_MIR_MODULE_H
 #define MAPLE_IR_INCLUDE_MIR_MODULE_H
@@ -106,12 +106,6 @@ class MIRTypeNameTable {
   size_t Size() const {
     return gStrIdxToTyIdxMap.size();
   }
-};
-
-enum MIRModuleHint {
-  kReserved = 0x00,    // reserved
-  kRcAnalyzed = 0x01,  // module analyzerc by analyzerc
-  kRcLowered = 0x02,   // module lowered by rcLowering
 };
 
 class MIRModule {
@@ -262,6 +256,14 @@ class MIRModule {
 
   bool IsCModule() const {
     return srcLang == kSrcLangC || srcLang == kSrcLangCPlusPlus;
+  }
+
+  inline void addSuperCall(const std::string &func) {
+    superCallSet.insert(func);
+  }
+
+  inline bool findSuperCall(const std::string &func) {
+    return superCallSet.find(func) != superCallSet.end();
   }
 
   void SetFuncInfoPrinted() const;
@@ -503,6 +505,8 @@ class MIRModule {
   uint32 floatNum;
   MIRFunction *curFunction;
   MapleVector<MIRFunction*> optimizedFuncs;
+  // Add the field for decouple optimization
+  std::unordered_set<std::string> superCallSet;
   MapleSet<uint32> rcNotNeedingLock;  // set of stmtID's which does incref/decref to an object not escaping
   // record all the fields that are initialized in the constructor. module scope,
   // if puIdx doesn't appear in this map, it writes to all field id
@@ -514,4 +518,4 @@ class MIRModule {
 
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple
-#endif  // INCLUDE_MIRMODULE_H
+#endif  // MAPLE_IR_INCLUDE_MIR_MODULE_H

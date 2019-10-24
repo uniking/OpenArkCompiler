@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_MIR_TYPE_H
 #define MAPLE_IR_INCLUDE_MIR_TYPE_H
@@ -48,79 +48,57 @@ inline uint32 GetPrimTypeBitSize(PrimType primType) {
 #endif  // MIR_FEATURE_FULL
 // return the same type with size increased to register size
 PrimType GetRegPrimType(PrimType primType);
-inline bool IsAddress(PrimType tp) {
-#ifdef DYNAMICLANG
-  return (tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 || tp == PTY_a64 || tp == PTY_simplestr ||
-          tp == PTY_simpleobj);
-#else
-  return (tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 || tp == PTY_a64);
-#endif
-}
-
-inline bool IsPrimitivePureScalar(PrimType tp) {
-  return (tp >= PTY_u8 && tp <= PTY_u64) || tp == PTY_u1 || (tp >= PTY_i8 && tp <= PTY_i64);
-}
-
-inline bool IsUnsignedInteger(PrimType tp) {
-  return ((tp >= PTY_u8 && tp <= PTY_u64) || tp == PTY_u1 || tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 ||
-          tp == PTY_a64);
-}
-
-inline bool IsSignedInteger(PrimType tp) {
-  return (tp >= PTY_i8 && tp <= PTY_i64);
-}
-
-bool IsPrimitiveInteger(PrimType pType);
-inline bool IsPrimitiveDynType(PrimType tp) {
-#if defined(DYNAMICLANG)
-  return tp >= PTY_dynany && tp <= PTY_dynnone;
-#else
-  return false;
-#endif
-}
-
-inline bool IsPrimitiveDynInteger(PrimType tp) {
-#if defined(DYNAMICLANG)
-  return (tp == PTY_dyni32 || tp == PTY_dynbool);
-#else
-  return false;
-#endif
-}
-
-inline bool IsPrimitiveDynFloat(PrimType tp) {
-#if defined(DYNAMICLANG)
-  return (tp == PTY_dynf64 || tp == PTY_dynf32);
-#else
-  return false;
-#endif
-}
-
 PrimType GetDynType(PrimType pType);
 PrimType GetNonDynType(PrimType pType);
-inline bool IsPrimitiveFloat(PrimType tp) {
-  return (tp == PTY_f32 || tp == PTY_f64 || tp == PTY_f128);
+
+inline bool IsAddress(PrimitiveType primitiveType) {
+  return primitiveType.IsAddress();
 }
 
-inline bool IsPrimitiveScalar(PrimType tp) {
-#ifdef DYNAMICLANG
-  return (IsPrimitiveInteger(tp) || IsPrimitiveFloat(tp) || IsPrimitiveDynInteger(tp) || IsPrimitiveDynFloat(tp) ||
-          tp == PTY_dynany || tp == PTY_dynundef || tp == PTY_dynstr || tp == PTY_simplestr || tp == PTY_dynbool ||
-          tp == PTY_dynobj || tp == PTY_simpleobj);
-#else
-  return (IsPrimitiveInteger(tp) || IsPrimitiveFloat(tp));
-#endif
+inline bool IsPrimitivePureScalar(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && !primitiveType.IsAddress() && !primitiveType.IsDynamic();
 }
 
-inline bool IsPrimitiveValid(PrimType tp) {
-#ifdef DYNAMICLANG
-  return IsPrimitiveScalar(tp) && tp != PTY_dynany;
-#else
-  return IsPrimitiveScalar(tp);
-#endif
+inline bool IsUnsignedInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && primitiveType.IsUnsigned() && !primitiveType.IsDynamic();
 }
 
-inline bool IsPrimitivePoint(PrimType tp) {
-  return tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 || tp == PTY_a64 || tp == PTY_constStr;
+inline bool IsSignedInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && !primitiveType.IsUnsigned() && !primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && !primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveDynType(PrimitiveType primitiveType) {
+  return primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveDynInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsDynamic() && primitiveType.IsInteger();
+}
+
+inline bool IsPrimitiveDynFloat(PrimitiveType primitiveType) {
+  return primitiveType.IsDynamic() && primitiveType.IsFloat();
+}
+
+inline bool IsPrimitiveFloat(PrimitiveType primitiveType) {
+  return primitiveType.IsFloat() && !primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveScalar(PrimitiveType primitiveType) {
+  return (primitiveType.IsInteger() || primitiveType.IsFloat() ||
+          (primitiveType.IsDynamic() && !primitiveType.IsDynamicNone()) ||
+          primitiveType.IsSimple());
+}
+
+inline bool IsPrimitiveValid(PrimitiveType primitiveType) {
+  return IsPrimitiveScalar(primitiveType) && !primitiveType.IsDynamicAny();
+}
+
+inline bool IsPrimitivePoint(PrimitiveType primitiveType) {
+  return primitiveType.IsPointer();
 }
 
 bool IsNoCvtNeeded(PrimType toType, PrimType fromType);
@@ -435,7 +413,7 @@ class MIRType {
     return primType;
   }
 
-  void SetPrimType(const PrimType &pt) {
+  void SetPrimType(const PrimType pt) {
     primType = pt;
   }
 
@@ -447,7 +425,7 @@ class MIRType {
     return tyIdx;
   }
 
-  void SetTypeIndex(const TyIdx &idx) {
+  void SetTypeIndex(const TyIdx idx) {
     tyIdx = idx;
   }
 
@@ -459,7 +437,7 @@ class MIRType {
     return typeKind;
   }
 
-  void SetMIRTypeKind(const MIRTypeKind &kind) {
+  void SetMIRTypeKind(const MIRTypeKind kind) {
     typeKind = kind;
   }
 
@@ -479,7 +457,7 @@ class MIRType {
     return nameStrIdx;
   }
 
-  void SetNameStrIdx(GStrIdx &strIdx) {
+  void SetNameStrIdx(GStrIdx strIdx) {
     nameStrIdx = strIdx;
   }
 
@@ -499,8 +477,10 @@ class MIRType {
     return false;
   }
 
-  virtual bool ValidateClassOrInterface(const char *className, bool isWarning);
+  virtual bool ValidateClassOrInterface(const char *className, bool noWarning);
   const std::string &GetName(void) const;
+  virtual std::string GetMplTypeName() const;
+  virtual std::string GetCompactMplTypeName() const;
   virtual bool PointsToConstString() const;
   virtual size_t GetHashIndex() const {
     constexpr uint8 kIdxShift = 2;
@@ -521,7 +501,7 @@ class MIRPtrType : public MIRType {
     return pointedTyIdx;
   }
 
-  void SetPointedTyIdx(const TyIdx &idx) {
+  void SetPointedTyIdx(const TyIdx idx) {
     pointedTyIdx = idx;
   }
 
@@ -553,6 +533,9 @@ class MIRPtrType : public MIRType {
 
   bool PointsToConstString() const override;
 
+  std::string GetMplTypeName() const override;
+
+  std::string GetCompactMplTypeName() const override;
  private:
   TyIdx pointedTyIdx;
 };
@@ -563,7 +546,7 @@ class MIRArrayType : public MIRType {
     return eTyIdx;
   }
 
-  void SetElemtTyIdx(const TyIdx &idx) {
+  void SetElemtTyIdx(const TyIdx idx) {
     eTyIdx = idx;
   }
 
@@ -577,7 +560,7 @@ class MIRArrayType : public MIRType {
     sizeArray[idx] = value;
   }
 
-  bool EqualTo(const MIRType &type) const;
+  bool EqualTo(const MIRType &type) const override;
   MIRArrayType &operator=(const MIRArrayType &p) = default;
   MIRArrayType() : MIRType(kTypeArray, PTY_agg), eTyIdx(0), dim(0), sizeArray{ 0 } {}
 
@@ -591,7 +574,7 @@ class MIRArrayType : public MIRType {
     }
   }
 
-  MIRArrayType(const TyIdx &eTyIdx, std::vector<uint32> &sizeArray) : MIRType(kTypeArray, PTY_agg) {
+  MIRArrayType(const TyIdx eTyIdx, std::vector<uint32> &sizeArray) : MIRType(kTypeArray, PTY_agg) {
     this->eTyIdx = eTyIdx;
     dim = sizeArray.size();
     for (int i = 0; i < kMaxArrayDim; i++) {
@@ -599,8 +582,8 @@ class MIRArrayType : public MIRType {
     }
   }
 
-  explicit MIRArrayType(const GStrIdx &strIdx)
-      : MIRType(kTypeArray, PTY_agg, strIdx), eTyIdx(TyIdx()), dim(0), sizeArray{ 0 } {}
+  explicit MIRArrayType(const GStrIdx strIdx) : MIRType(kTypeArray, PTY_agg, strIdx), dim(0), sizeArray{ 0 } {}
+
   uint16 GetDim() const {
     return dim;
   }
@@ -611,16 +594,16 @@ class MIRArrayType : public MIRType {
 
   MIRType *GetElemType() const;
 
-  MIRType *CopyMIRTypeNode() const {
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRArrayType(*this);
   }
 
-  bool HasTypeParam() const {
+  bool HasTypeParam() const override {
     return GetElemType()->HasTypeParam();
   }
 
-  void Dump(int indent, bool dontUseName = false) const;
-  size_t GetSize() const {
+  void Dump(int indent, bool dontUseName) const override;
+  size_t GetSize() const override {
     size_t elemSize = GetElemType()->GetSize();
     if (elemSize == 0) {
       return 0;
@@ -633,7 +616,7 @@ class MIRArrayType : public MIRType {
     return elemSize * numElems;
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 2;
     size_t hidx = (eTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind);
     for (size_t i = 0; i < dim; i++) {
@@ -643,6 +626,8 @@ class MIRArrayType : public MIRType {
     return hidx % kTypeHashLength;
   }
 
+  std::string GetMplTypeName() const override;
+  std::string GetCompactMplTypeName() const override;
  private:
   TyIdx eTyIdx;
   uint16 dim;
@@ -656,31 +641,32 @@ class MIRFarrayType : public MIRType {
     return elemTyIdx;
   }
 
-  void SetElemtTyIdx(const TyIdx &idx) {
+  void SetElemtTyIdx(const TyIdx idx) {
     elemTyIdx = idx;
   }
 
-  bool EqualTo(const MIRType &type) const;
+  bool EqualTo(const MIRType &type) const override;
   MIRFarrayType() : MIRType(kTypeFArray, PTY_agg), elemTyIdx(TyIdx(0)){};
   explicit MIRFarrayType(TyIdx elemTyIdx) : MIRType(kTypeFArray, PTY_agg), elemTyIdx(elemTyIdx) {}
 
   explicit MIRFarrayType(GStrIdx strIdx) : MIRType(kTypeFArray, PTY_agg, strIdx), elemTyIdx(TyIdx(0)) {}
 
   ~MIRFarrayType() = default;
-  MIRType *CopyMIRTypeNode() const;
+  MIRType *CopyMIRTypeNode() const override;
   MIRType *GetElemType() const;
 
-  bool HasTypeParam() const {
+  bool HasTypeParam() const override {
     return GetElemType()->HasTypeParam();
   }
 
-  void Dump(int indent, bool dontUseName = false) const;
+  void Dump(int indent, bool dontUseName = false) const override;
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 5;
     return ((elemTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
-
+  std::string GetMplTypeName() const override;
+  std::string GetCompactMplTypeName() const override;
  private:
   TyIdx elemTyIdx;
 };
@@ -864,10 +850,10 @@ class MIRStructType : public MIRType {
     return std::find(fields.begin(), fields.end(), pair) != fields.end();
   }
 
-  virtual bool HasVolatileField();
-  virtual bool HasTypeParam() const;
-  bool EqualTo(const MIRType &type) const;
-  MIRType *CopyMIRTypeNode() const {
+  virtual bool HasVolatileField() override;
+  virtual bool HasTypeParam() const override;
+  bool EqualTo(const MIRType &type) const override;
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRStructType(*this);
   }
 
@@ -931,7 +917,7 @@ class MIRStructType : public MIRType {
   }
 
   void DumpFieldsAndMethods(int indent, bool hasMethod) const;
-  void Dump(int indent, bool dontUseName = false) const;
+  void Dump(int indent, bool dontUseName = false) const override;
   bool IsIncomplete() const {
     return typeKind == kTypeStructIncomplete || typeKind == kTypeClassIncomplete ||
            typeKind == kTypeInterfaceIncomplete;
@@ -944,7 +930,7 @@ class MIRStructType : public MIRType {
   // only meaningful for MIRClassType and MIRInterface types
   bool IsLocal() const;
 
-  size_t GetSize() const {
+  size_t GetSize() const override {
     if (typeKind == kTypeUnion) {
       size_t maxSize = GetElemType(0)->GetSize();
       for (size_t i = 1; i < fields.size(); i++) {
@@ -970,7 +956,7 @@ class MIRStructType : public MIRType {
     }
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
@@ -988,6 +974,10 @@ class MIRStructType : public MIRType {
   }
 
   virtual const std::vector<MIRInfoPair> &GetInfo() const {
+    CHECK_FATAL(false, "can not use GetInfo");
+  }
+
+  virtual std::vector<MIRInfoPair> &GetInfo() {
     CHECK_FATAL(false, "can not use GetInfo");
   }
 
@@ -1019,8 +1009,9 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use AddStaticValue");
   }
 
-  virtual FieldPair TraverseToFieldRef(FieldID &fieldID) const ;
-
+  virtual FieldPair TraverseToFieldRef(FieldID &fieldID) const;
+  std::string GetMplTypeName() const override;
+  std::string GetCompactMplTypeName() const override;
  protected:
   FieldVector fields;
   std::vector<TyIdx> fieldInferredTyIdx;
@@ -1130,7 +1121,7 @@ class MIRClassType : public MIRStructType {
     return parentTyIdx;
   }
 
-  void SetParentTyIdx(const TyIdx &idx) {
+  void SetParentTyIdx(const TyIdx idx) {
     parentTyIdx = idx;
   }
 
@@ -1143,12 +1134,12 @@ class MIRClassType : public MIRStructType {
     return interfacesImplemented.at(i);
   }
 
-  void SetNthInerfaceImplemented(uint32 i, TyIdx &tyIdx) {
+  void SetNthInerfaceImplemented(uint32 i, TyIdx tyIdx) {
     ASSERT(i < interfacesImplemented.size(), "array index out of range");
     interfacesImplemented.at(i) = tyIdx;
   }
 
-  std::vector<MIRInfoPair> &GetInfo() {
+  std::vector<MIRInfoPair> &GetInfo() override {
     return info;
   }
 
@@ -1297,12 +1288,12 @@ class MIRInterfaceType : public MIRStructType {
     return parentsTyIdx[i];
   }
 
-  void SetParentsElementTyIdx(size_t i, TyIdx &tyIdx) {
+  void SetParentsElementTyIdx(size_t i, TyIdx tyIdx) {
     ASSERT(i < parentsTyIdx.size(), "array index out of range");
     parentsTyIdx[i] = tyIdx;
   }
 
-  std::vector<MIRInfoPair> &GetInfo() {
+  std::vector<MIRInfoPair> &GetInfo() override {
     return info;
   }
 
@@ -1480,7 +1471,7 @@ class MIRFuncType : public MIRType {
     return retTyIdx;
   }
 
-  void SetRetTyIdx(const TyIdx &idx) {
+  void SetRetTyIdx(const TyIdx idx) {
     retTyIdx = idx;
   }
 
@@ -1493,7 +1484,7 @@ class MIRFuncType : public MIRType {
     return paramTypeList[i];
   }
 
-  void AddParamTypeList(const TyIdx &tyIdx) {
+  void AddParamTypeList(const TyIdx tyIdx) {
     paramTypeList.push_back(tyIdx);
   }
 
@@ -1659,7 +1650,7 @@ class MIRGenericInstantType : public MIRInstantVectorType {
     return genericTyIdx;
   }
 
-  void SetGenericTyIdx(const TyIdx &idx) {
+  void SetGenericTyIdx(const TyIdx idx) {
     genericTyIdx = idx;
   }
 
@@ -1678,4 +1669,4 @@ class MIRGenericInstantType : public MIRInstantVectorType {
 
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple
-#endif
+#endif  // MAPLE_IR_INCLUDE_MIR_TYPE_H

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_MIR_FUNCTION_H
 #define MAPLE_IR_INCLUDE_MIR_FUNCTION_H
@@ -86,6 +86,7 @@ class MIRFunction {
     upFormalSize = 0;
     moduleID = 0;
     funcSize = 0;
+    tempCount = 0;
     puIdxOrigin = 0;
     baseFuncStrIdx = GStrIdx(0);
     baseClassStrIdx = GStrIdx(0);
@@ -759,6 +760,14 @@ class MIRFunction {
     funcSize = fs;
   }
 
+  uint32 GetTempCount() const {
+    return tempCount;
+  }
+
+  void IncTempCount() {
+    tempCount++;
+  }
+
   uint8 *GetFormalWordsTypeTagged() {
     return formalWordsTypeTagged;
   }
@@ -943,6 +952,7 @@ class MIRFunction {
   uint16 upFormalSize;
   uint16 moduleID;
   uint32 funcSize;                         // size of code in words
+  uint32 tempCount;
   uint8 *formalWordsTypeTagged = nullptr;  // bit vector where the Nth bit tells whether
   // the Nth word in the formal parameters area
   // addressed upward from %%FP (that means
@@ -983,4 +993,4 @@ class MIRFunction {
 };
 
 }  // namespace maple
-#endif
+#endif  // MAPLE_IR_INCLUDE_MIR_FUNCTION_H

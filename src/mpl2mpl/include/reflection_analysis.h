@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MPL2MPL_INCLUDE_REFLECTION_ANALYSIS_H
 #define MPL2MPL_INCLUDE_REFLECTION_ANALYSIS_H
@@ -218,7 +218,7 @@ static constexpr uint64 kMethodAbstract = 0x00000010;
 class ReflectionAnalysis : public AnalysisResult {
  public:
   static void GenStrTab(MIRModule *mirmodule);
-  static uint32 FindOrInsertRepeatString(const std::string &str, bool isHot = false, uint32 hotType = kLayoutUnused);
+  static uint32 FindOrInsertRepeatString(const std::string &str, bool isHot = false, uint8 hotType = kLayoutUnused);
   static BaseNode *GenClassInfoAddr(BaseNode *obj, MIRBuilder *builder);
   ReflectionAnalysis(MIRModule *mod, MemPool *memPool, KlassHierarchy *kh, MIRBuilder &builder)
       : AnalysisResult(memPool),
@@ -302,12 +302,12 @@ class ReflectionAnalysis : public AnalysisResult {
   bool VtableFunc(const MIRFunction *func) const;
   void GenPrimitiveClass();
   bool RootClassDefined();  // wether current module defines root classes
-  void GenAllMethodHash(std::vector<std::pair<MethodPair*, int>> &methodInfoVec, bool &isFinalize,
+  void GenAllMethodHash(std::vector<std::pair<MethodPair*, int>> &methodInfoVec,
                         std::unordered_map<uint32, std::string> &baseNameMap,
                         std::unordered_map<uint32, std::string> &fullNameMap);
   void GenAllFieldHash(std::vector<std::pair<FieldPair, uint16>> &fieldV);
   void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType *classType,
-                      PragmaKind paragKind, const std::string &paragName,
+                      PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
   void SetAnnoFieldConst(const MIRStructType *metadataRoType, MIRAggConst *newConst, uint32 fieldID,
                          std::map<int, int> &idxNumMap, const std::string &annoArr);
@@ -348,6 +348,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static std::string strTabBothHot;
   static std::string strTabRunHot;
   static bool strTabInited;
+  static TyIdx invalidIdx;
 };
 
 class DoReflectionAnalysis : public ModulePhase {
@@ -363,4 +364,4 @@ class DoReflectionAnalysis : public ModulePhase {
 };
 
 }  // namespace maple
-#endif
+#endif  // MPL2MPL_INCLUDE_REFLECTION_ANALYSIS_H
